@@ -105,7 +105,7 @@ class TicTacToe:
         empty_line = '|'.join(
             [f"{' ':{self.CELL_WIDTH}}" for _ in range(self.board_size)])
         # 2. Линия-разделитель (гибридная идея с нижним подчеркиванием)
-        # Мы используем нижнее подчеркивание только ТАМ, где проходят границы
+        # Используется нижнее подчеркивание только ТАМ, где проходят границы
         # между клетками
         hybrid_sep = '|'.join(
             [f"{'_' * self.CELL_WIDTH}" for _ in range(self.board_size)])
