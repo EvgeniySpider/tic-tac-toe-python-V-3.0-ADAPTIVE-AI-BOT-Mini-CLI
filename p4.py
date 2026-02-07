@@ -1,8 +1,8 @@
 """
 Модуль игры 'Крестики-Нолики' (TicTacToe).
 
-Реализует консольную версию игры с настраиваемым размером поля, 
-системой ведения логов, расширенной аналитикой сыгранных матчей 
+Реализует консольную версию игры с настраиваемым размером поля,
+системой ведения логов, расширенной аналитикой сыгранных матчей
 и адаптивным ботом (ИИ).
 """
 from datetime import datetime
@@ -20,9 +20,10 @@ class TicTacToe:
     Включает в себя визуализацию поля, проверку победителя и систему истории.
     """
     CELL_WIDTH = 5  # ширина ячеек по ГОСТу
+
     def __init__(self, board_size: int = 3):
         """
-        Инициализация игры. 
+        Инициализация игры.
         board_size: определяет сторону квадрата(игрового поля) (например, 3x3).
         Здесь мы сразу генерируем все выигрышные комбинации, чтобы не вычислять их во время игры.
         """
@@ -31,10 +32,19 @@ class TicTacToe:
                 'Размер игрового поля должен быть цифрой от 2 до 9')
         if not (2 <= board_size <= 9):
             raise ValueError('Значение игрового поля должно быть от 2 до 9')
+
         self.board_size = board_size
         self.board_limit = board_size * board_size
+        self.board = [[' ' for _ in range(self.board_size)]
+                      for _ in range(self.board_size)]
+
         self.win_combinations = self._generate_win_combinations()
-        self.reset()
+        self.winning_coords = []
+        self.current_player = 'X'
+        self.change_bot_play = 'player'
+        self.is_play_bot = None
+        self.winner_count = 0
+        self.position = None
 
     def __str__(self):
         '''Возвращает краткое состояние текущей игровой сессии.'''
@@ -71,7 +81,8 @@ class TicTacToe:
         self.board_limit = self.board_size * self.board_size
         self.winner_count = 0
         self.change_bot_play = 'player'
-        self.is_play_bot = False
+        self.is_play_bot = None
+        self.position = None
 
     def get_colored_symbol(self, symbol, r=None, c=None):
         """
@@ -79,8 +90,8 @@ class TicTacToe:
 
         Логика работы:
         1. Назначает красный цвет для 'X' и зеленый для 'O'.
-        2. Если игра завершена (есть winning_coords), метод подсвечивает ярким цветом 
-           только победную линию, а остальные символы окрашивает в тускло-серый, 
+        2. Если игра завершена (есть winning_coords), метод подсвечивает ярким цветом
+           только победную линию, а остальные символы окрашивает в тускло-серый,
            акцентируя внимание на результате матча.
         3. Обеспечивает центрирование символа внутри ячейки согласно CELL_WIDTH.
         """
@@ -98,7 +109,7 @@ class TicTacToe:
     def display_board(self):
         """
         Визуализация игрового поля в консоли.
-        Использует CELL_WIDTH для выравнивания и 'hybrid_sep' для создания 
+        Использует CELL_WIDTH для выравнивания и 'hybrid_sep' для создания
         эффекта сетки с нижним подчеркиванием ячеек.
         """
         # 1. Пустая линия для создания высоты ячейки
@@ -127,8 +138,8 @@ class TicTacToe:
         Проверка наличия выигрышной комбинации на поле.
 
         Метод анализирует все заранее сгенерированные линии (строки, столбцы, диагонали).
-        Если находится линия, полностью заполненная символом текущего игрока, 
-        координаты этой линии сохраняются в self.winning_coords для последующей 
+        Если находится линия, полностью заполненная символом текущего игрока,
+        координаты этой линии сохраняются в self.winning_coords для последующей
         подсветки при отрисовке поля.
         """
         for combo in self.win_combinations:
@@ -188,45 +199,48 @@ class TicTacToe:
         except OSError as e:
             print(f"Произошла системная ошибка при работе с файлом: {e}")
 
+    def _mode_selection(self):
+        print(
+            'Чтобы выйти из игры ДО её завершения нажмите ENTER (пустой ввод)')
+        ask_play_with_bot = input('Хотите сыграть проти бота?[Y\\n] ')
+        self.is_play_bot = (True if ask_play_with_bot in
+                            ['y', 'yes', 'д', 'да'] else False)
+        print('Начата игра против бота. Вы ходите первым') if self.is_play_bot\
+            else print('Начата игра в режиме PVP')
+
+    def pvp_mode(self):
+        self.display_board()
+        print(f'Ходит игрок: {self.show_current_player()}')
+        self.pos_str = input(f'Введите ячейку 1 - {self.board_limit}: ')
+
+    def bot_mode(self):
+        # Логика игры против бота
+        if self.change_bot_play == 'player':
+            self.display_board()
+            print(f'Ваш ход {self.show_current_player()}')
+            self.pos_str = input(
+                f'Введите ячейку 1 - {self.board_limit}: ')
+        elif self.change_bot_play == 'bot':
+            move_bot = self._get_ai_move()
+            self.pos_str = str(
+                move_bot[0] * self.board_size + move_bot[1] + 1)
+            print(f'Бот сделал ход, теперь ваша очередь')
+
     def play(self):
         """
-        Основной игровой цикл. 
-        Управляет логикой ходов, переключением между игроком и ботом, 
+        Основной игровой цикл.
+        Управляет логикой ходов, переключением между игроком и ботом,
         а также обрабатывает прерывание игры пользователем (через ENTER).
         """
         while True:
             try:
-                if self.is_play_bot is False:
-                    print(
-                        'Чтобы выйти из игры ДО её завершения нажмите ENTER (пустой ввод)')
-                    ask_play_with_bot = input(
-                        'Хотите сыграть проти бота?[Y\\n] ')
-                    if ask_play_with_bot.lower() in ['y', 'yes', 'д', 'да']:
-                        self.is_play_bot = True
-                        print('Начата игра против бота. Вы ходите первым')
-                    else:
-                        self.is_play_bot = None
-                # Логика игры против бота
-                if self.is_play_bot:
-                    if self.change_bot_play == 'bot':
-                        move_bot = self._get_ai_move()
-                        pos_str = str(
-                            move_bot[0] * self.board_size + move_bot[1] + 1)
-                        print(f'Бот сделал ход, теперь ваша очередь')
-                    elif self.change_bot_play == 'player':
-                        self.display_board()
-                        print(f'Ваш ход {self.show_current_player()}')
-                        pos_str = input(
-                            f'Введите ячейку 1 - {self.board_limit}: ')
-                # Логика игры против человек
-                elif not self.is_play_bot:
-                    self.display_board()
-                    print(f'Ходит игрок: {self.show_current_player()}')
-                    pos_str = input(f'Введите ячейку 1 - {self.board_limit}: ')
-                if not pos_str:
-                    return print('Игра прервана')
-                self._validate_move(pos_str)
-                self._try_make_move(pos_str)
+                if self.is_play_bot is None:
+                    self._mode_selection()
+
+                self.bot_mode() if self.is_play_bot else self.pvp_mode()
+
+                self._validate_move(self.pos_str)
+                self._try_make_move(self.pos_str)
                 if self._is_winner():
                     self.display_board()
                     if not self._is_continue_game('win'):
@@ -235,15 +249,16 @@ class TicTacToe:
                     self.display_board()
                     if not self._is_continue_game('draw'):
                         return
-                elif self.is_play_bot:
-                    # Переключение очередности хода для бота и игрока
-                    self.change_bot_play = 'player' if self.change_bot_play == 'bot' else 'bot'
-                    self.current_player = 'O' if self.current_player == 'X' else 'X'
-                elif not self.is_play_bot:
-                    # Смена текущего игрока в режиме PVP
-                    self.current_player = 'O' if self.current_player == 'X' else 'X'
+                self._switch_player()
+
             except ValueError as e:
                 print(e)
+
+    def _switch_player(self):
+        if self.is_play_bot is not None:
+            self.current_player = 'O' if self.current_player == 'X' else 'X'
+        if self.is_play_bot:
+            self.change_bot_play = 'player' if self.change_bot_play == 'bot' else 'bot'
 
     def _get_ai_move(self):
         """
@@ -327,14 +342,14 @@ class TicTacToe:
             print('Файл с историей игр успешно удалён')
 
         elif action == 'show_stats' or action == 3:
-            win_X, win_O, draws = 0, 0, 0
+            win_x, win_o, draws = 0, 0, 0
             for one_party in lines:
                 # True + 1, False + 0
-                win_X += one_party.endswith('X')
-                win_O += one_party.endswith('O')
+                win_x += one_party.endswith('X')
+                win_o += one_party.endswith('O')
                 draws += one_party.endswith('Ничья')
-            print(f'Количество побед игрока X: [{win_X}]\n'
-                  f'Количество побед игрока O: [{win_O}]\n'
+            print(f'Количество побед игрока X: [{win_x}]\n'
+                  f'Количество побед игрока O: [{win_o}]\n'
                   f'Количество игр в ничью: [{draws}]')
         elif action.startswith('show_win_'):
             target = action.replace('show_win_', '').upper()
@@ -391,7 +406,8 @@ class TicTacToe:
             elif target in ['pvp_stats', 'ai_stats']:
                 def chance_calc_f(a, c): return f'{(100 / a * c):.1f}%'
                 mode_name = 'Бот' if target == 'ai_stats' else 'PVP'
-                # Фильтруем данные из распарсенных словарей по режиму и результату
+                # Фильтруем данные из распарсенных словарей по режиму и
+                # результату
                 win_x = sum(
                     1 for line in data if line['mode'] == mode_name and line['winner'] == 'X')
                 win_o = sum(
@@ -400,12 +416,14 @@ class TicTacToe:
                     1 for line in data if line['mode'] == mode_name and line['draw'])
                 total_games = win_x + win_o + draws
                 if total_games == 0:
-                    return print(f"Статистика для режима {mode_name} пока отсутствует.")
-                # подсчёт винрейта с использованием функции chance_calc_f с готовым форматированием
+                    return print(
+                        f"Статистика для режима {mode_name} пока отсутствует.")
+                # подсчёт винрейта с использованием функции chance_calc_f с
+                # готовым форматированием
                 win_x = chance_calc_f(total_games, win_x)
                 win_o = chance_calc_f(total_games, win_o)
                 draws = chance_calc_f(total_games, draws)
-                print((f'Процент побед | mode PVP | X: {win_x} | O: {win_o} | Ничья: {draws}') if target == 'pvp_stats'
+                print((f'Процент побед | mode PVP | X: {win_x} | O: {win_o}| Ничья: {draws}') if target == 'pvp_stats'
                       else f'Процент побед | mode Бот | Игрок(X) {win_x} | Бот(O) {win_o} | Ничья {draws}')
             elif target == 'fastest_game':
                 record = min(data, key=lambda x: x['moves'])
@@ -414,15 +432,17 @@ class TicTacToe:
 
             elif target.startswith('data_'):
                 target = target.replace('data_', '')
-                # Поиск игр, где дата лога начинается с искомой даты (ДД.ММ.ГГГГ)
+                # Поиск игр, где дата лога начинается с искомой даты
+                # (ДД.ММ.ГГГГ)
                 result = [
                     line for line in data if line['date'].startswith(target)]
                 if not result:
                     print(f'За дату {target} игр не найдено.')
                 else:
-                    print(f'{"-"*10} Все игры за дату {target} {"-"*10}')
+                    print(f'{"-" * 10} Все игры за дату {target} {"-" * 10}')
                     for res in result:
-                        outcome = f"Победил {res['winner']}" if res['winner'] else "Ничья"
+                        outcome = f"Победил {
+                            res['winner']}" if res['winner'] else "Ничья"
 
                         print(f"[{res['date']}] Режим: {res['mode']} | "
                               f"Поле: {res['size']} | Ходов: {res['moves']} | Итог: {outcome}")
@@ -430,7 +450,7 @@ class TicTacToe:
     def _extract_history(self, lines):
         """
         Парсинг текстового лога с помощью регулярных выражений.
-        Использует именованные группы (date, mode, size и т.д.) для 
+        Использует именованные группы (date, mode, size и т.д.) для
         преобразования строк файла в структурированные словари Python.
         """
         pattern = re.compile(r'''
