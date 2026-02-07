@@ -226,6 +226,10 @@ class TicTacToe:
                 move_bot[0] * self.board_size + move_bot[1] + 1)
             print(f'Бот сделал ход, теперь ваша очередь')
 
+    def _is_stop_game(self):
+        if not self.pos_str:
+            return True
+
     def play(self):
         """
         Основной игровой цикл.
@@ -238,7 +242,9 @@ class TicTacToe:
                     self._mode_selection()
 
                 self.bot_mode() if self.is_play_bot else self.pvp_mode()
-
+                if self._is_stop_game():
+                    print('Вы досрочно завершили игру')
+                    return
                 self._validate_move(self.pos_str)
                 self._try_make_move(self.pos_str)
                 if self._is_winner():
