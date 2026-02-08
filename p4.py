@@ -171,7 +171,7 @@ class TicTacToe:
         row = (position - 1) // self.board_size
         col = (position - 1) % self.board_size
         if self._is_cell_occupied(row, col):
-            raise CellOccupiedError(position, self.current_player)
+            raise CellOccupiedError(position, self.board[row][col])
         self.winner_count += 1
         self.board[row][col] = self.current_player
 
