@@ -12,6 +12,16 @@ import re
 from random import choice
 
 
+class TicTacToeError(Exception):
+    """Базовое исключение для игры 'Крестики-нолики'."""
+    pass
+
+class CellOccupiedError(TicTacToeError):
+    """Вызывается, когда игрок пытается сходить в уже занятую клетку."""
+    def __init__(self, position, player):
+        super().__init__(f'Ячейка №{position} уже занята игроком {player}')
+
+
 class TicTacToe:
     """
     Основной класс логики игры TicTacToe.
@@ -156,18 +166,18 @@ class TicTacToe:
     def _try_make_move(self, position):
         position = int(position)
         if not (1 <= position <= self.board_limit):
-            raise ValueError(
+            raise TicTacToeError(
                 f'Число {position} вне диапазона, диапазон: 1-{self.board_limit}')
         row = (position - 1) // self.board_size
         col = (position - 1) % self.board_size
         if self._is_cell_occupied(row, col):
-            raise ValueError('Ячейка занята, выберите другую')
+            raise CellOccupiedError(position, self.current_player)
         self.winner_count += 1
         self.board[row][col] = self.current_player
 
     def _validate_move(self, pos_str):
         if not pos_str.isdigit():
-            raise ValueError('Некорректный ввод, попробуйте ещё раз')
+            raise TicTacToeError('Некорректный ввод, попробуйте ещё раз')
 
     def show_current_player(self):
         return (f'{Fore.RED}{'X'}{Style.RESET_ALL}' if self.current_player == 'X'
@@ -257,7 +267,7 @@ class TicTacToe:
                         return
                 self._switch_player()
 
-            except ValueError as e:
+            except TicTacToeError as e:
                 print(e)
 
     def _switch_player(self):
