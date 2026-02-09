@@ -463,8 +463,10 @@ class TicTacToe:
                 win_x = chance_calc_f(total_games, win_x)
                 win_o = chance_calc_f(total_games, win_o)
                 draws = chance_calc_f(total_games, draws)
-                print((f'Процент побед | mode PVP | X: {win_x} | O: {win_o}| Ничья: {draws}') if target == 'pvp_stats'
-                      else f'Процент побед | mode Бот | Игрок(X) {win_x} | Бот(O) {win_o} | Ничья {draws}')
+                print((f'Процент побед | mode PVP | X: {win_x} | O: {win_o} | Ничья: {draws}')
+                      if target == 'pvp_stats'
+                      else f'Процент побед | mode Бот | Игрок(X) {win_x} |'
+                           f' Бот(O) {win_o} | Ничья {draws}')
             elif target == 'fastest_game':
                 record = min(data, key=lambda x: x['moves'])
                 print(
