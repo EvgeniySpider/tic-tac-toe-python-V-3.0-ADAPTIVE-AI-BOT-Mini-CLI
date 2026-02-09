@@ -17,6 +17,21 @@ class TicTacToeError(Exception):
     """Базовое исключение для игры 'Крестики-нолики'."""
     pass
 
+class InvalidConfigurationError(TicTacToeError):
+    """Базовый класс для ошибок настройки игры (в __init__)."""
+    pass
+
+class BoardSizeTypeError(InvalidConfigurationError):
+    """Вызывается, если размер поля передан не целым числом."""
+    def __init__(self, value):
+        super().__init__(f'Тип значения {type(value).__name__} не подходит. '
+                         f'Размер поля должен быть целым числом (int).')
+
+class BoardSizeValueError(InvalidConfigurationError):
+    """Вызывается, если размер поля вне допустимого диапазона (2-9)."""
+    def __init__(self, value):
+        super().__init__(f"Значение {value} недопустимо. Размер поля должен быть от 2 до 9.")
+
 class CellOccupiedError(TicTacToeError):
     """Вызывается, когда игрок пытается сходить в уже занятую клетку."""
     def __init__(self, position, player):
@@ -49,10 +64,9 @@ class TicTacToe:
         Здесь мы сразу генерируем все выигрышные комбинации, чтобы не вычислять их во время игры.
         """
         if not isinstance(board_size, int):
-            raise TypeError(
-                'Размер игрового поля должен быть цифрой от 2 до 9')
+            raise BoardSizeTypeError(board_size)
         if not (2 <= board_size <= 9):
-            raise ValueError('Значение игрового поля должно быть от 2 до 9')
+            raise BoardSizeValueError(board_size)
 
         self.board_size = board_size
         self.board_limit = board_size * board_size
@@ -68,7 +82,7 @@ class TicTacToe:
         self.position = None
 
     def __str__(self):
-        '''Возвращает краткое состояние текущей игровой сессии.'''
+        """Возвращает краткое состояние текущей игровой сессии."""
         return f'Игра TicTacToe [Поле: {self.board_size}x{self.board_size}]'
 
     def _generate_win_combinations(self):
@@ -214,7 +228,7 @@ class TicTacToe:
         log_entry = (f"[{now}] Режим: {mode} | Поле: {self.board_size}x{self.board_size} | "
                      f"Количество ходов: {self.winner_count} | Итог: {result}\n")
         try:
-            with open("tic_tac_toe_history.txt", "a", encoding="utf-8") as file:
+            with open('tic_tac_toe_history.txt', 'a', encoding='utf-8') as file:
                 file.write(log_entry)
         except OSError as e:
             print(f"Произошла системная ошибка при работе с файлом: {e}")
@@ -427,7 +441,7 @@ class TicTacToe:
                     f'Общее кол-во ходов: {sum(line["moves"] for line in data)}')
             elif target == 'sum_boards':
                 print(
-                    f'Общая площадь всех полей: {sum(line['size'] for line in data)}')
+                    f'Общая площадь всех полей: {sum(line["size"] for line in data)}')
 
             elif target in ['pvp_stats', 'ai_stats']:
                 def chance_calc_f(a, c): return f'{(100 / a * c):.1f}%'
