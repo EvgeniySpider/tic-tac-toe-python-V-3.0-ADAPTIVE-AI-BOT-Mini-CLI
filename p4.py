@@ -6,10 +6,11 @@
 и адаптивным ботом (ИИ).
 """
 from datetime import datetime
-from colorama import Fore, Style
 from os import path, remove
 import re
 from random import choice
+from colorama import Fore, Style
+
 
 
 class TicTacToeError(Exception):
@@ -20,6 +21,16 @@ class CellOccupiedError(TicTacToeError):
     """Вызывается, когда игрок пытается сходить в уже занятую клетку."""
     def __init__(self, position, player):
         super().__init__(f'Ячейка №{position} уже занята игроком {player}')
+
+class InvalidPositionError(TicTacToeError):
+    def __init__(self, position, limit):
+        super().__init__(f'Введённое значение {position} вне диапазона игрового поля,'
+                        f' введите значнение от 1 до {limit} включительно')
+
+class InvalidInputError(TicTacToeError):
+    def __init__(self, user_input):
+        super().__init__(f'Некорректный ввод: "{user_input}". '
+                        f'Пожалуйста, введите цифру/число.')
 
 
 class TicTacToe:
@@ -166,8 +177,7 @@ class TicTacToe:
     def _try_make_move(self, position):
         position = int(position)
         if not (1 <= position <= self.board_limit):
-            raise TicTacToeError(
-                f'Число {position} вне диапазона, диапазон: 1-{self.board_limit}')
+            raise InvalidPositionError(position, self.board_limit)
         row = (position - 1) // self.board_size
         col = (position - 1) % self.board_size
         if self._is_cell_occupied(row, col):
@@ -177,7 +187,7 @@ class TicTacToe:
 
     def _validate_move(self, pos_str):
         if not pos_str.isdigit():
-            raise TicTacToeError('Некорректный ввод, попробуйте ещё раз')
+            raise InvalidInputError(pos_str)
 
     def show_current_player(self):
         return (f'{Fore.RED}{'X'}{Style.RESET_ALL}' if self.current_player == 'X'
