@@ -1,5 +1,6 @@
 import tictactoe_library
 
 
-tictactoe_library.play_bot()
+tictactoe_library
 
+tictactoe_library.analytics.gm

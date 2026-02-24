@@ -1,12 +1,12 @@
 from .exceptions import *
 from .game import TicTacToe
-
+from .analytics import *
 def play():    
     """Быстрый запуск игры."""
     game = TicTacToe()
     game.play()
 
-__all__ = ["TicTacToe", "play"]
+# __all__ = ["TicTacToe", "play"]
 
 
 def play_bot():

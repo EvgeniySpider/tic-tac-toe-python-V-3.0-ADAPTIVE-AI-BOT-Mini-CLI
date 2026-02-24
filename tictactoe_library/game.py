@@ -9,7 +9,7 @@ from datetime import datetime
 
 from random import choice
 from colorama import Fore, Style
-from exceptions import *
+from .exceptions import *
 # .
 class TicTacToe:
     """
