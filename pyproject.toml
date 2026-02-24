@@ -1,5 +1,5 @@
 [project]
-name = "TicTacToe"
+name = "tictactoe-library"
 version = "0.1.0"
 description = ""
 authors = [

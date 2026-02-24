@@ -1,0 +1,179 @@
+from os import path, remove
+import re
+from exceptions import InvalidConfigurationError
+
+
+
+class GameHistoryManager:
+    """Интерфейс управления историей матчей.
+        Аргументы:
+            action:
+            - 1 / 'show_match_story': Показать весь лог игр.
+            - 2 / 'show_draws': Показать только ничьи.
+            - 3 / 'show_stats': Общая статистика побед X и O.
+            - 25 / 'remove_story': Удалить файл истории.
+            - 'show_win_[X/O]': Победы конкретного игрока (например, show_win_X).
+            - 'show_last_matches_[N]': Показать последние N игр.
+            АНАЛИТИКА (через 'show_advanced_'):
+            - 'show_advanced_pvp_stats': Винрейт в режиме PVP.
+            - 'show_advanced_ai_stats': Винрейт в режиме против бота.
+            - 'show_advanced_sum_moves': Суммарное количество ходов за все игры.
+            - 'show_advanced_sum_boards': Суммарная площадь игровых полей.
+            - 'show_advanced_fastest_game': Информация о самой короткой игре.
+            - 'show_advanced_data_[ДД.ММ.ГГГГ]': Поиск игр по конкретной дате."""
+   
+   
+    def __init__(self):
+        self.log_name = 'tic_tac_toe_history.txt'
+        if not path.isfile('tic_tac_toe_history.txt'):
+            raise InvalidConfigurationError(
+                f'Файл {self.log_name} не найден. Сыграйте хотя бы раз!'
+                )
+        try:
+            with open(self.log_name, 'r', encoding='UTF-8') as f:
+                self.lines = [line.strip() for line in f if line.strip()]
+        except OSError as e:
+            raise InvalidConfigurationError(f'Ошибка доступа к файлу: {e}') from e
+        """
+        Парсинг текстового лога с помощью регулярных выражений.
+        Использует именованные группы (date, mode, size и т.д.) для
+        преобразования строк файла в структурированные словари Python.
+        """
+        pattern = re.compile(r'''
+        \[(?P<date>.*?)\]
+        \s+Режим: \s+(?P<mode>Бот|PVP)\s+ \|
+        \s+ Поле: \s+ (?P<size>\d+x\d+)
+        \s+ \| \s+ Количество\s+ходов:\s+ (?P<moves>\d+)
+        \s+ \| \s+ Итог: \s+ (Победил\s+ (?P<winner>[XO])|(?P<draw>Ничья))
+        ''', re.VERBOSE)
+        data = [m.groupdict() for line in self.lines if (m := pattern.search(line))]
+        for entry in data:
+            entry['size'] = int(entry['size'][0]) * int(entry['size'][2])
+            entry['moves'] = int(entry['moves'])
+        self.parsed_data = data
+
+    def game_history(self, action: int | str | None = None):
+        if action is None:
+            print(self.game_history.__doc__)
+            return
+        
+    def show_match_story(self):
+        print('--- История игр ---')
+        for one_party in self.lines:
+            print(one_party)
+    def show_draws(self):
+        print('--- История игр в ничью ---')
+        for one_party in self.lines:
+            if 'Ничья' in one_party:
+                print(one_party)
+    def remove_story(self):
+        remove('tic_tac_toe_history.txt')
+        print('Файл с историей игр успешно удалён')
+
+    def show_stats(self):
+        win_x, win_o, draws = 0, 0, 0
+        for one_party in self.lines:
+            # True + 1, False + 0
+            win_x += one_party.endswith('X')
+            win_o += one_party.endswith('O')
+            draws += one_party.endswith('Ничья')
+        print(f'Количество побед игрока X: [{win_x}]\n'
+                f'Количество побед игрока O: [{win_o}]\n'
+                f'Количество игр в ничью: [{draws}]')
+        
+    def show_win(self, target):
+            print(f'--- Победы игрока {target} ---')
+            for one_party in self.lines:
+                if one_party.endswith(target):
+                    print(one_party)
+            else:
+                print('Такого игрока нет. Введите X или O')
+
+    def show_last_matches(self, target = 5):
+            if not isinstance(target, int):
+                print('Введите целое число')
+                return 
+            if target is None or not (1 <= target <= 40):
+                print('Введите диапазон игр от 1 до 40 включительно')
+                return
+
+            sum_of_games = min(target, len(self.lines))
+            if sum_of_games == 0:
+                print('История игр пока пуста.')
+                return
+
+            last_word = 'игры' if sum_of_games < 5 else 'игр'
+            # Срез для получения последних игр
+            last_games = self.lines[-1:-sum_of_games - 1: -1]
+            (print(f'--- Последние {sum_of_games} {last_word} ---') if sum_of_games > 1
+             else print('--- Последняя игра ---'))
+            for one_party in last_games:
+                print(one_party)
+        
+
+    def sum_moves(self):
+        print(
+        f'Общее кол-во ходов: {sum(line["moves"] for line in self.parsed_data)}')
+            
+    def sum_boards(self):
+        print(
+        f'Общая площадь всех полей: {sum(line["size"] for line in self.parsed_data)}')
+
+    def match_stats(self, target = None):
+        if target is None:
+            print('Укажите режим игры: [бот / pvp]')
+            return 
+        target = target.lower()
+        def chance_calc_f(a, c): return f'{(100 / a * c):.1f}%'
+
+        mode_name = 'Бот' if target == 'бот' else 'PVP'
+    
+        win_x = sum(
+            1 for line in self.parsed_data if line['mode'] == mode_name and line['winner'] == 'X')
+        win_o = sum(
+            1 for line in self.parsed_data if line['mode'] == mode_name and line['winner'] == 'O')
+        draws = sum(
+            1 for line in self.parsed_data if line['mode'] == mode_name and line['draw'])
+        total_games = win_x + win_o + draws
+        if total_games == 0:
+            return print(
+                f"Статистика для режима {mode_name} пока отсутствует.")
+        # подсчёт винрейта с использованием функции chance_calc_f с
+        # готовым форматированием
+        win_x = chance_calc_f(total_games, win_x)
+        win_o = chance_calc_f(total_games, win_o)
+        draws = chance_calc_f(total_games, draws)
+        print((f'Процент побед | mode БОТ | X: {win_x} | O: {win_o} | Ничья: {draws}')
+                if target == 'бот'
+                else f'Процент побед | mode PVP | Игрок(X) {win_x} |'
+                    f' Бот(O) {win_o} | Ничья {draws}')
+        
+            # elif target == 'fastest_game':
+            #     record = min(data, key=lambda x: x['moves'])
+            #     print(
+            #         f'Наименьшее кол-во ходов. Дата: {record["date"]}. Всего {record["moves"]} ходов')
+
+            # elif target.startswith('data_'):
+            #     target = target.replace('data_', '')
+            #     # Поиск игр, где дата лога начинается с искомой даты
+            #     # (ДД.ММ.ГГГГ)
+            #     result = [
+            #         line for line in data if line['date'].startswith(target)]
+            #     if not result:
+            #         print(f'За дату {target} игр не найдено.')
+            #     else:
+            #         print(f'{"-" * 10} Все игры за дату {target} {"-" * 10}')
+            #         for res in result:
+            #             outcome = f"Победил {
+            #                 res['winner']}" if res['winner'] else "Ничья"
+
+            #             print(f"[{res['date']}] Режим: {res['mode']} | "
+            #                   f"Поле: {res['size']} | Ходов: {res['moves']} | Итог: {outcome}")
+
+
+
+
+
+gm = GameHistoryManager()
+
+gm.match_stats('')
