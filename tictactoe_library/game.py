@@ -6,11 +6,11 @@
 и адаптивным ботом (ИИ).
 """
 from datetime import datetime
-
 from random import choice
 from colorama import Fore, Style
 from .exceptions import *
-# .
+
+
 class TicTacToe:
     """
     Основной класс логики игры TicTacToe.
@@ -20,7 +20,7 @@ class TicTacToe:
     """
     CELL_WIDTH = 5  # ширина ячеек по ГОСТу
 
-    def __init__(self, board_size: int = 3, mode = None):
+    def __init__(self, board_size: int = 3, mode=None):
         """
         Инициализация игры.
         board_size: определяет сторону квадрата(игрового поля) (например, 3x3).
@@ -203,14 +203,13 @@ class TicTacToe:
     def _message_mode(self, mode):
         print('Начата игра против бота. Вы ходите первым') if mode\
             else print('Начата игра в режиме PVP')
-        
+
     def _mode_selection(self):
         print(
             'Чтобы выйти из игры ДО её завершения нажмите ENTER (пустой ввод)')
         ask_play_with_bot = input('Хотите сыграть проти бота?[Y\\n] ')
         self.is_play_bot = (True if ask_play_with_bot in
                             ['y', 'yes', 'д', 'да'] else False)
-        
 
     def pvp_mode(self):
         self.display_board()
@@ -274,8 +273,6 @@ class TicTacToe:
             self.change_bot_play = 'player' if self.change_bot_play == 'bot' else 'bot'
         if self.reset_player:
             self.reset_player = False
-            
-            
 
     def _get_ai_move(self):
         """
@@ -311,9 +308,6 @@ class TicTacToe:
         empty_cells = [(r, c) for r in range(self.board_size)
                        for c in range(self.board_size) if self.board[r][c] == ' ']
         return choice(empty_cells) if empty_cells else None
-
-
-
 
 
 # if __name__ == "__main__":

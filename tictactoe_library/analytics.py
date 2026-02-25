@@ -66,35 +66,51 @@ class GameHistoryManager:
             remove('tic_tac_toe_history.txt')
             print('Файл с историей игр успешно удалён')
 
+    def _count_results(self, mode, winner, key='winner'):
+        """Вспомогательный метод для подсчета количества матчей по заданным критериям."""
+        return sum(1 for line in self.parsed_data
+                   if line['mode'] == mode and line[key] == winner)
+
     @property
     def show_stats(self):
-        """Краткая сводка: общее количество побед X, O и ничьих."""
-        win_x, win_o, draws = 0, 0, 0
-        for one_party in self.lines:
-            # True + 1, False + 0
-            win_x += one_party.endswith('X')
-            win_o += one_party.endswith('O')
-            draws += one_party.endswith('Ничья')
-        print(f'Количество побед игрока X: [{win_x}]\n'
-              f'Количество побед игрока O: [{win_o}]\n'
-              f'Количество игр в ничью: [{draws}]')
+        """Краткая сводка: статистика побед и ничьих с разделением по режимам."""
+        win_x_pvp = self._count_results('PVP', 'X')
+        win_x_bot = self._count_results('Бот', 'X')
+        win_o_pvp = self._count_results('PVP', 'O')
+        win_o_bot = self._count_results('Бот', 'O')
 
-    def show_win(self, target=None):
-        if target not in ['x', 'o', 'X', 'O']:
+        draws_pvp = self._count_results('PVP', 'Ничья', 'draw')
+        draws_bot = self._count_results('Бот', 'Ничья', 'draw')
+
+        total_x_win = win_x_pvp + win_x_bot
+        total_o_win = win_o_pvp + win_o_bot
+        total_draws = draws_pvp + draws_bot
+        total_matches = total_x_win + total_o_win + total_draws
+        print('----- Статистика побед и ничьих -----')
+        print(f'Количество побед X | Режим PVP {win_x_pvp} | '
+              f'Режим Бот {win_x_bot} | Всего {total_x_win}')
+        print(f'Количество побед O | Режим PVP {win_o_pvp} | '
+              f'Режим Бот {win_o_bot} | Всего {total_o_win}')
+        print(f'Количество игр в ничью | Режим PVP {draws_pvp} | '
+              f'Режим Бот {draws_bot} | Всего {total_draws}')
+        print(f'Общее количество матчей {total_matches}')
+
+    def win(self, char=None):
+        if char not in ['x', 'o', 'X', 'O']:
             print('Укажите игрока [X / O]')
             return
 
-        print(f'--- Победы игрока {target} ---')
+        print(f'--- Победы игрока {char} ---')
         for one_party in self.lines:
-            if one_party.endswith(target.upper()):
+            if one_party.endswith(char.upper()):
                 print(one_party)
 
-    def last_matches(self, n=5):
+    def last_matches(self, n = None):
         """Отображение последних N сыгранных матчей."""
         if not isinstance(n, int):
-            print('Введите целое число')
+            print('Введите целое число от 1 до 40')
             return
-        if n is None or not (1 <= n <= 40):
+        if not (1 <= n <= 40):
             print('Введите диапазон игр от 1 до 40 включительно')
             return
 
@@ -136,12 +152,9 @@ class GameHistoryManager:
 
         mode_name = 'Бот' if target == 'bot' else 'PVP'
 
-        win_x = sum(
-            1 for line in self.parsed_data if line['mode'] == mode_name and line['winner'] == 'X')
-        win_o = sum(
-            1 for line in self.parsed_data if line['mode'] == mode_name and line['winner'] == 'O')
-        draws = sum(
-            1 for line in self.parsed_data if line['mode'] == mode_name and line['draw'])
+        win_x = self._count_results(mode_name, 'X')
+        win_o = self._count_results(mode_name, 'O')
+        draws = self._count_results(mode_name, 'Ничья')
         total_games = win_x + win_o + draws
         if total_games == 0:
             return print(
@@ -150,10 +163,10 @@ class GameHistoryManager:
         win_x = chance_calc_f(total_games, win_x)
         win_o = chance_calc_f(total_games, win_o)
         draws = chance_calc_f(total_games, draws)
-        print((f'Процент побед | mode: Bot | X: {win_x} | O: {win_o} | Ничья: {draws}')
+        print((f'Процент побед | mode: Bot | Игрок(X) {win_x} | Бот(O) {win_o} | Ничья: {draws}')
               if target == 'bot'
               else f'Процент побед | mode: PVP | Игрок(X) {win_x} |'
-              f' bot(O) {win_o} | Ничья {draws}')
+              f' Игрок(O) {win_o} | Ничья {draws}')
 
     @property
     def fastest_game(self):
