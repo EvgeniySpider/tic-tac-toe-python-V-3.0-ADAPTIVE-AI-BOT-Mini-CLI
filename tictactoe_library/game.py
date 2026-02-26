@@ -310,6 +310,6 @@ class TicTacToe:
         return choice(empty_cells) if empty_cells else None
 
 
-# if __name__ == "__main__":
-#     game = TicTacToe()
-#     game.play()
+if __name__ == "__main__":
+    game = TicTacToe()
+    game.play()
