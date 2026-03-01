@@ -207,9 +207,9 @@ class TicTacToe:
     def _mode_selection(self):
         print(
             'Чтобы выйти из игры ДО её завершения нажмите ENTER (пустой ввод)')
-        ask_play_with_bot = input('Хотите сыграть проти бота?[Y\\n] ')
+        ask_play_with_bot = input('Хотите сыграть против бота?[Y\\n] ')
         self.is_play_bot = (True if ask_play_with_bot in
-                            ['y', 'yes', 'д', 'да'] else False)
+                            ['y', 'yes', 'д', 'да', 'Y'] else False)
 
     def pvp_mode(self):
         self.display_board()

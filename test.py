@@ -3,4 +3,4 @@ import tictactoe_library
 
 
 
-print(tictactoe_library.log)
+tictactoe_library.play()
