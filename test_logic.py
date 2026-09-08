@@ -13,22 +13,22 @@ from tictactoe_library import TicTacToe, exceptions
 
 
 @pytest.fixture
-def game():
+def game() -> TicTacToe:
     return TicTacToe(3)
 
 
-def test_initial_state(game):
+def test_initial_state(game: TicTacToe):
     assert game._is_winner() is False
 
 
-def test_occupied_cell(game):
+def test_occupied_cell(game: TicTacToe):
     game.board[0][0] = 'X'
     assert game._is_cell_occupied(0, 0)
     assert not game._is_cell_occupied(1, 1), \
         'Ошибка: пустая клетка считается занятой'
 
 
-def test_horizontal_win(game):
+def test_horizontal_win(game: TicTacToe):
     win_row = [(0, 0), (0, 1), (0, 2)]
     for r, c in win_row:
         game.board[r][c] = 'X'
@@ -36,7 +36,7 @@ def test_horizontal_win(game):
         f'Ошибка: не распознана победа по горизонтали {win_row}'
 
 
-def test_diagonal_win(game):
+def test_diagonal_win(game: TicTacToe):
     win_diagonal = [(0, 2), (1, 1), (2, 0)]
     for r, c in win_diagonal:
         game.board[r][c] = 'X'
@@ -44,7 +44,7 @@ def test_diagonal_win(game):
         f'Ошибка: не распознана выигрышная диагональ {win_diagonal}'
 
 
-def test_garbage_coords(game):
+def test_garbage_coords(game: TicTacToe):
     garbage_coords = [(0, 0), (0, 1), (1, 2)]
     for r, c in garbage_coords:
         game.board[r][c] = 'X'
@@ -52,12 +52,12 @@ def test_garbage_coords(game):
         f'Ошибка: распознана победа с не выигрышной комбинацией {garbage_coords}'
 
 
-def test_sum_win_coords(game):
+def test_sum_win_coords(game: TicTacToe):
     assert len(game.win_combinations) == 8, \
         'Выигрышных комбинаций при поле 3x3 должно быть 8'
 
 
-def test_draw_method(game):
+def test_draw_method(game: TicTacToe):
     game.board = [
         ['X', 'O', 'X'],
         ['X', 'O', 'O'],
@@ -69,24 +69,24 @@ def test_draw_method(game):
         'Ошибка: Метод не распознал ничью при полностью заполненном полном поле'
 
 
-def test_do_big_position(game):
+def test_do_big_position(game: TicTacToe):
     with pytest.raises(exceptions.InvalidPositionError):
         game._try_make_move(10)
 
 
-def test_ai_winning_move(game):
+def test_ai_winning_move(game: TicTacToe):
     game.board[0][0], game.board[0][1] = 'X', 'X'
     game.board[1][0], game.board[1][1] = 'O', 'O'
     assert game._get_ai_move() == (1, 2), \
         'Бот не сделал решающий ход в последнюю клетку'
 
 
-def test_ai_center_priority(game):
+def test_ai_center_priority(game: TicTacToe):
     game.board[0][0] = 'X'
     assert game._get_ai_move() == (1, 1), 'Бот не занял центральную клетку'
 
 
-def test_ai_blocking_move(game):
+def test_ai_blocking_move(game: TicTacToe):
     game.board[0][0] = 'X'
     game.board[0][1] = 'X'
     assert game._get_ai_move() == (0, 2), \
