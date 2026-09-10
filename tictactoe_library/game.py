@@ -45,6 +45,7 @@ class TicTacToe:
         self.is_play_bot = None if mode is None else mode
         self.winner_count = 0
         self.position = None
+        self.pos_str = ' '
 
     def __str__(self):
         """Возвращает краткое состояние текущей игровой сессии."""
@@ -84,6 +85,7 @@ class TicTacToe:
         self.change_bot_play = 'player'
         self.is_play_bot = None if self.mode is None else self.mode
         self.position = None
+        self.pos_str = ' '
 
     def get_colored_symbol(self, symbol, r=None, c=None):
         """
@@ -208,6 +210,9 @@ class TicTacToe:
         print(
             'Чтобы выйти из игры ДО её завершения нажмите ENTER (пустой ввод)')
         ask_play_with_bot = input('Хотите сыграть против бота?[Y\\n] ')
+        if ask_play_with_bot == '':
+            self.pos_str = ''
+
         self.is_play_bot = (True if ask_play_with_bot in
                             ['y', 'yes', 'д', 'да', 'Y'] else False)
 
@@ -231,6 +236,7 @@ class TicTacToe:
 
     def _is_stop_game(self):
         if not self.pos_str:
+            print('Вы досрочно завершили игру')
             return True
 
     def play(self):
@@ -244,12 +250,14 @@ class TicTacToe:
                 if self.is_play_bot is None:
                     self._mode_selection()
 
+                if self._is_stop_game():
+                    return
+
                 if self.winner_count == 0:
                     self._message_mode(self.is_play_bot)
 
                 self.bot_mode() if self.is_play_bot else self.pvp_mode()
                 if self._is_stop_game():
-                    print('Вы досрочно завершили игру')
                     return
                 self._validate_move(self.pos_str)
                 self._try_make_move(self.pos_str)
